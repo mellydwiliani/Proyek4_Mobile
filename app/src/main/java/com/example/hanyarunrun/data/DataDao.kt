@@ -20,4 +20,8 @@ interface DataDao {
 
     @Delete
     suspend fun delete(data: DataEntity)
+
+    @Query("DELETE FROM data_table WHERE id = :dataId")
+    suspend fun deleteById(dataId: Int)
+
 }

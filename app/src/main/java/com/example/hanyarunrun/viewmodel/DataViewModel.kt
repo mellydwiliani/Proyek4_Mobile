@@ -51,4 +51,14 @@ class DataViewModel(application: Application) : AndroidViewModel(application) {
             dao.getById(id)
         }
     }
+
+    fun deleteData(id: Int) {
+        viewModelScope.launch {
+            val data = dao.getById(id) // Cek apakah data dengan ID ini ada
+            if (data != null) {
+                dao.delete(data) // Hapus data dari database
+            }
+        }
+    }
+
 }

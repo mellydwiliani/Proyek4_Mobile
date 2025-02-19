@@ -1,7 +1,6 @@
-package com.example.hanyarunrun.ui
+package com.example.hanyarunrun.ui.screen.list
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -127,6 +126,21 @@ fun EditScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Update Data")
+            }
+
+            Button(
+                onClick = {
+                    viewModel.deleteData(dataId)
+                    Toast.makeText(context, "Data berhasil dihapus!", Toast.LENGTH_SHORT).show()
+                    navController.popBackStack()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Delete Data", color = MaterialTheme.colorScheme.onError)
             }
         }
     }

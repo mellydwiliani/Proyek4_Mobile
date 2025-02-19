@@ -6,6 +6,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.hanyarunrun.ui.screen.home.DataEntryScreen
+import com.example.hanyarunrun.ui.screen.list.DataListScreen
+import com.example.hanyarunrun.ui.screen.list.EditScreen
 import com.example.hanyarunrun.viewmodel.DataViewModel
 
 @Composable

@@ -1,4 +1,4 @@
-package com.example.hanyarunrun.ui
+package com.example.hanyarunrun.ui.screen.home
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -106,6 +106,14 @@ fun DataEntryScreen(navController: NavHostController, viewModel: DataViewModel) 
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Submit Data")
+            }
+            Button(
+                onClick = {
+                    navController.navigate("list")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back")
             }
         }
     }

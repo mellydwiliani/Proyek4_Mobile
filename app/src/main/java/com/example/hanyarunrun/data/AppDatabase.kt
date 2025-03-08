@@ -5,9 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [DataEntity::class], version = 1, exportSchema = false)
+@Database(entities = [DataEntity::class, ProfileEntity::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun dataDao(): DataDao
+    abstract fun appDao(): AppDao
 
     companion object {
         @Volatile
@@ -19,7 +19,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

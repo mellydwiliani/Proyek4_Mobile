@@ -5,128 +5,227 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.compose.runtime.livedata.observeAsState
+import com.example.hanyarunrun.ui.theme.HanyarunrunTheme
 import com.example.hanyarunrun.viewmodel.DataViewModel
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataListScreen(navController: NavHostController, viewModel: DataViewModel) {
     val dataList by viewModel.dataList.observeAsState(emptyList())
+    val selectedTahun by viewModel.selectedTahun.observeAsState(2023)
+    var selectedKabKota by remember { mutableStateOf<String?>(null) }
+    var expandedKabKota by remember { mutableStateOf(false) }
+    var expandedTahun by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val kabKotaList = dataList.map { it.namaKabupatenKota }.distinct()
+    val tahunList = dataList.map { it.tahun }.distinct().sorted()
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("add") // Navigasi ke halaman entry data
-                },
-                containerColor = MaterialTheme.colorScheme.primary
+    LaunchedEffect(selectedTahun) {
+        viewModel.fetchAllDataFromApi(selectedTahun)
+    }
+
+    HanyarunrunTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = HanyarunrunTheme.colors.uiBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("+", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimary)
-            }
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
-        content = { paddingValues ->
-            if (dataList.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                Text(
+                    text = "Data Pendapatan per Kab/Kota",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp),
+                    color = HanyarunrunTheme.colors.textPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedTahun,
+                    onExpandedChange = { expandedTahun = !expandedTahun },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "No Data Available",
-                            style = MaterialTheme.typography.headlineMedium
+                    OutlinedTextField(
+                        value = selectedTahun.toString(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Pilih Tahun") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTahun)
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = HanyarunrunTheme.colors.brand,
+                            unfocusedBorderColor = HanyarunrunTheme.colors.uiBorder,
+                            focusedTextColor = HanyarunrunTheme.colors.textPrimary,
+                            unfocusedTextColor = HanyarunrunTheme.colors.textPrimary
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                navController.navigate("add") // Navigasi ke halaman entry data
-                            },
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(text = "Add Data")
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedTahun,
+                        onDismissRequest = { expandedTahun = false }
+                    ) {
+                        tahunList.forEach { tahun ->
+                            DropdownMenuItem(
+                                text = { Text(tahun.toString()) },
+                                onClick = {
+                                    viewModel.fetchAllDataFromApi(tahun)
+                                    expandedTahun = false
+                                }
+                            )
                         }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = paddingValues
-                ) {
-                    items(dataList) { item ->
-                        Card(
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    text = "Provinsi: ${item.namaProvinsi} (${item.kodeProvinsi})",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Kabupaten/Kota: ${item.namaKabupatenKota} (${item.kodeKabupatenKota})",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Total: ${item.total} ${item.satuan}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Tahun: ${item.tahun}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            navController.navigate("edit/${item.id}")
-                                        },
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Text(text = "Edit")
-                                    }
 
-                                    Button(
-                                        onClick = {
-                                            viewModel.deleteData(item.id) // Memanggil fungsi delete di ViewModel
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error
-                                        ),
-                                        shape = RoundedCornerShape(8.dp)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedKabKota,
+                    onExpandedChange = { expandedKabKota = !expandedKabKota },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedKabKota ?: "Pilih Kab/Kota",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Filter berdasarkan Kab/Kota") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKabKota)
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = HanyarunrunTheme.colors.brand,
+                            unfocusedBorderColor = HanyarunrunTheme.colors.uiBorder,
+                            focusedTextColor = HanyarunrunTheme.colors.textPrimary,
+                            unfocusedTextColor = HanyarunrunTheme.colors.textPrimary
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedKabKota,
+                        onDismissRequest = { expandedKabKota = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Semua Data") },
+                            onClick = {
+                                selectedKabKota = null
+                                expandedKabKota = false
+                            }
+                        )
+                        kabKotaList.forEach { kabKota ->
+                            DropdownMenuItem(
+                                text = { Text(kabKota) },
+                                onClick = {
+                                    selectedKabKota = kabKota
+                                    expandedKabKota = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Cari Kab/Kota atau Sektor Wisata") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = HanyarunrunTheme.colors.brand,
+                        unfocusedBorderColor = HanyarunrunTheme.colors.uiBorder,
+                        focusedTextColor = HanyarunrunTheme.colors.textPrimary,
+                        unfocusedTextColor = HanyarunrunTheme.colors.textPrimary
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (dataList.isEmpty()) {
+                    Text(
+                        text = "Tidak Ada Data Tersedia",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = HanyarunrunTheme.colors.textSecondary
+                    )
+                } else {
+                    val filteredList = dataList.filter { item ->
+                        (selectedKabKota == null || item.namaKabupatenKota == selectedKabKota) &&
+                                (item.tahun == selectedTahun) &&
+                                (searchQuery.isEmpty() ||
+                                        item.namaKabupatenKota.contains(searchQuery, ignoreCase = true) ||
+                                        item.sektorWisata.contains(searchQuery, ignoreCase = true))
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filteredList) { item ->
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                                colors = CardDefaults.cardColors(containerColor = HanyarunrunTheme.colors.uiFloated),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .background(HanyarunrunTheme.colors.uiFloated)
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f)
                                     ) {
-                                        Text(text = "Delete", color = MaterialTheme.colorScheme.onError)
+                                        Text(
+                                            text = "Kab/Kota: ${item.namaKabupatenKota}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = HanyarunrunTheme.colors.textPrimary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Sektor: ${item.sektorWisata}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = HanyarunrunTheme.colors.textSecondary
+                                        )
+                                        Text(
+                                            text = "Total: ${item.jumlahPendapatan} ${item.satuan}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = HanyarunrunTheme.colors.textSecondary
+                                        )
+                                        Text(
+                                            text = "Tahun: ${item.tahun}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = HanyarunrunTheme.colors.textSecondary
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { viewModel.deleteData(item.id) }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Hapus Data",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                             }
@@ -135,30 +234,5 @@ fun DataListScreen(navController: NavHostController, viewModel: DataViewModel) {
                 }
             }
         }
-    )
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    NavigationBar {
-        NavigationBarItem(
-            selected = false, // Ganti dengan logika untuk menandai halaman aktif
-            onClick = { navController.navigate("form") }, // Navigasi ke halaman home
-            label = { Text("Home") },
-            icon = { Icon(imageVector = Icons.Filled.Home, contentDescription = "Home") }
-        )
-        NavigationBarItem(
-            selected = false, // Ganti dengan logika untuk menandai halaman aktif
-            onClick = { navController.navigate("list") }, // Navigasi ke halaman list
-            label = { Text("List") },
-            icon = { Icon(imageVector = Icons.Filled.List, contentDescription = "List") }
-        )
-        NavigationBarItem(
-            selected = false, // Ganti dengan logika untuk menandai halaman aktif
-            onClick = { navController.navigate("settings") }, // Navigasi ke halaman settings
-            label = { Text("Settings") },
-            icon = { Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings") }
-        )
     }
 }
-
